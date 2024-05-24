@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: Links
+  h2:
+    console:
+      path: /my-h2-console
+  datasource:
+    url: jdbc:h2:file:./db/links
+    username: s28977
+    password: test
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
