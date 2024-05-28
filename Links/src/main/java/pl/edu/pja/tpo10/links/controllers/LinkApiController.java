@@ -16,7 +16,7 @@ import pl.edu.pja.tpo10.links.services.LinkService;
 import java.util.NoSuchElementException;
 
 @RestController
-@RequestMapping(path = "/api/links/",
+@RequestMapping(path = "/api/links",
                 produces = MediaType.APPLICATION_JSON_VALUE)
 public class LinkApiController
 {
@@ -27,7 +27,7 @@ public class LinkApiController
         this.linkService = linkService;
     }
 
-    @PostMapping()
+    @PostMapping("/")
     public ResponseEntity<LinkResponseDto> saveLink(@RequestBody LinkRequestDto linkRequestDto)
     {
         LinkResponseDto linkResponseDto = linkService.saveLink(linkRequestDto);
