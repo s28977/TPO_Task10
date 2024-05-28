@@ -1,0 +1,6 @@
+Task 11:
+1. How to use internalization in html file. It looks like the th:errors attribute only looks at english version ni TPO_10?
+2. What is bootstrap and what functionalities should we use?
+
+Task 10:
+How to handle endpoint that either returns 404 or redirects to link?
