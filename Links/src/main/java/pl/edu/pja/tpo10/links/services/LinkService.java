@@ -40,13 +40,6 @@ public class LinkService
         return linkRepository.findById(id).map(linkDtoMapper::map).orElseThrow();
     }
 
-    public String  getTargetUrlAndIncrementVisits(String id)
-    {
-        Link link = linkRepository.findById(id).orElseThrow();
-        incrementVisits(link);
-        return link.getTargetUrl();
-    }
-
     public void updateLink(String id, JsonMergePatch patch) throws JsonPatchException, JsonProcessingException, NoSuchElementException, WrongPasswordException, IllegalUpdateException
     {
         Link link = linkRepository.findById(id).orElseThrow();
@@ -89,6 +82,13 @@ public class LinkService
             throw new WrongPasswordException("wrong password");
         }
         linkRepository.deleteById(id);
+    }
+
+    public String  getTargetUrlAndIncrementVisits(String id)
+    {
+        Link link = linkRepository.findById(id).orElseThrow();
+        incrementVisits(link);
+        return link.getTargetUrl();
     }
 
     private void incrementVisits(Link link)

@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.support.HttpRequestHandlerServlet;
 import org.springframework.web.servlet.view.RedirectView;
 import pl.edu.pja.tpo10.links.dtos.LinkRequestDto;
 import pl.edu.pja.tpo10.links.dtos.LinkResponseDto;
@@ -16,27 +15,27 @@ import pl.edu.pja.tpo10.links.exceptions.WrongPasswordException;
 import pl.edu.pja.tpo10.links.services.LinkService;
 
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @RestController
-@RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-public class LinkController
+@RequestMapping(path = "/api/links/",
+                produces = MediaType.APPLICATION_JSON_VALUE)
+public class LinkApiController
 {
     private final LinkService linkService;
 
-    public LinkController(LinkService linkService)
+    public LinkApiController(LinkService linkService)
     {
         this.linkService = linkService;
     }
 
-    @PostMapping("/api/links")
+    @PostMapping()
     public ResponseEntity<LinkResponseDto> saveLink(@RequestBody LinkRequestDto linkRequestDto)
     {
         LinkResponseDto linkResponseDto = linkService.saveLink(linkRequestDto);
         return ResponseEntity.ok(linkResponseDto);
     }
 
-    @GetMapping("/api/links/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<LinkResponseDto> getLink(@PathVariable String id)
     {
         try
@@ -48,19 +47,7 @@ public class LinkController
         }
     }
 
-    @GetMapping("/red/{id}")
-    public Object get(@PathVariable String id)
-    {
-        try
-        {
-            return new RedirectView(linkService.getTargetUrlAndIncrementVisits(id), false, false);
-        } catch (NoSuchElementException e)
-        {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @PatchMapping("/api/links/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<?> updateLink(@PathVariable String id, @RequestBody JsonMergePatch patch)
     {
         try
@@ -81,7 +68,7 @@ public class LinkController
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/api/links/{id}")
+    @DeleteMapping("/{id}")
     ResponseEntity<?> deleteLink(HttpServletRequest request, @PathVariable String id)
     {
         String password = request.getHeader("pass");
