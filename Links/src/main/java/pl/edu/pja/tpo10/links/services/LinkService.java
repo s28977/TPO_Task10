@@ -1,8 +1,6 @@
 package pl.edu.pja.tpo10.links.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
 import org.springframework.stereotype.Service;
@@ -20,13 +18,13 @@ public class LinkService
 {
     private final LinkRepository linkRepository;
     private final LinkDtoMapper linkDtoMapper;
-    private final ObjectMapper objectMapper;
+    private final PatchService patchService;
 
-    public LinkService(LinkRepository linkRepository, LinkDtoMapper linkDtoMapper, ObjectMapper objectMapper)
+    public LinkService(LinkRepository linkRepository, LinkDtoMapper linkDtoMapper, PatchService patchService)
     {
         this.linkRepository = linkRepository;
         this.linkDtoMapper = linkDtoMapper;
-        this.objectMapper = objectMapper;
+        this.patchService = patchService;
     }
 
     public LinkResponseDto saveLink(LinkRequestDto linkRequestDto)
@@ -47,27 +45,20 @@ public class LinkService
         {
             throw new NoSuchElementException();
         }
-        String password = link.getPassword();
-        link.setPassword(null);
-        Link patchedLink = applyPatch(link, patch);
-        if (!patchedLink.getLinkId().equals(link.getLinkId())
-                || !patchedLink.getRedirectUrl().equals(link.getRedirectUrl())
-                || !patchedLink.getVisits().equals(link.getVisits()))
+        if (!patchService.hasPassword(patch))
+        {
+            throw new WrongPasswordException("wrong password");
+        }
+        if (patchService.hasIllegalFields(patch))
         {
             throw new IllegalUpdateException();
         }
-        if (!password.equals(patchedLink.getPassword()))
+        Link patchedLink = patchService.applyPatch(link, patch);
+        if (!link.getPassword().equals(patchedLink.getPassword()))
         {
             throw new WrongPasswordException("wrong password");
         }
         linkRepository.save(patchedLink);
-    }
-
-    private Link applyPatch(Link link, JsonMergePatch patch) throws JsonPatchException, JsonProcessingException
-    {
-        JsonNode linkNode = objectMapper.valueToTree(link);
-        JsonNode patchNode = patch.apply(linkNode);
-        return objectMapper.treeToValue(patchNode, Link.class);
     }
 
     public void deleteLink(String id, String password) throws WrongPasswordException
