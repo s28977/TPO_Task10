@@ -11,7 +11,7 @@ public class Link
     @Column(name = "LinkID")
     private String linkId;
 
-    @Column(name = "Name")
+    @Column(name = "Name", unique = true)
     private String name;
 
     @Column(name = "TargetURL")

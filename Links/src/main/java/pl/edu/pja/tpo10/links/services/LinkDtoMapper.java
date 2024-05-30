@@ -31,7 +31,7 @@ public class LinkDtoMapper
             linkId = linkGenerator.generate();
         }
         link.setLinkId(linkId);
-        link.setRedirectUrl("http://localhost:8080/red/" + linkId);
+        link.setRedirectUrl("http://localhost:8080/red/" + linkId); //should be in appsettings
         return link;
     }
 

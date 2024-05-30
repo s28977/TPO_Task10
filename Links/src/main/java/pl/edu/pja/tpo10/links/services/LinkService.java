@@ -5,6 +5,7 @@ import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
 import org.springframework.stereotype.Service;
 import pl.edu.pja.tpo10.links.exceptions.ImmutableFieldException;
+import pl.edu.pja.tpo10.links.exceptions.LinkWithThisNameAlreadyExistsException;
 import pl.edu.pja.tpo10.links.exceptions.WrongPasswordException;
 import pl.edu.pja.tpo10.links.models.Link;
 import pl.edu.pja.tpo10.links.dtos.LinkRequestDto;
@@ -28,10 +29,13 @@ public class LinkService
         this.patchService = patchService;
     }
 
-    public LinkResponseDto saveLink(LinkRequestDto linkRequestDto)
+    public LinkResponseDto saveLink(LinkRequestDto linkRequestDto) throws LinkWithThisNameAlreadyExistsException
     {
+        if (linkRepository.existsByName(linkRequestDto.getName()))
+            throw new LinkWithThisNameAlreadyExistsException(linkRequestDto.getName());
         Link link = linkRepository.save(linkDtoMapper.map(linkRequestDto));
         return linkDtoMapper.map(link);
+
     }
 
     public LinkResponseDto getLinkById(String id)
@@ -39,13 +43,23 @@ public class LinkService
         return linkRepository.findById(id).map(linkDtoMapper::map).orElseThrow();
     }
 
-    public void updateLink(String id, JsonMergePatch patch) throws JsonPatchException, JsonProcessingException, NoSuchElementException, WrongPasswordException, ImmutableFieldException
+    //    public LinkResponseDto getLinkByName(String name)
+    //    {
+    //        return linkRepository.findByName(name).map(linkDtoMapper::map).orElseThrow();
+    //    }
+
+    public void updateLink(String id, JsonMergePatch patch) throws JsonPatchException, JsonProcessingException, NoSuchElementException, WrongPasswordException, ImmutableFieldException, LinkWithThisNameAlreadyExistsException
     {
         Link link = linkRepository.findById(id).orElseThrow();
-        if(patchService.hasIncorrectFields(patch))
+        if (!patchService.hasCorrectFields(patch))
+        {
             throw new ImmutableFieldException();
+        }
+        Optional<String> name = patchService.getName(patch);
+        if (name.isPresent() && linkRepository.existsByName(name.get()) && !name.get().equals(link.getName()))
+            throw new LinkWithThisNameAlreadyExistsException(name.get());
         Optional<String> password = patchService.getPassword(patch);
-        if(password.isEmpty() || !password.get().equals(link.getPassword()))
+        if (password.isEmpty() || !password.get().equals(link.getPassword()))
             throw new WrongPasswordException();
         Link patchedLink = patchService.applyPatch(link, patch);
         linkRepository.save(patchedLink);
@@ -65,7 +79,7 @@ public class LinkService
         linkRepository.deleteById(id);
     }
 
-    public String  getTargetUrlAndIncrementVisits(String id)
+    public String getTargetUrlAndIncrementVisits(String id)
     {
         Link link = linkRepository.findById(id).orElseThrow();
         incrementVisits(link);

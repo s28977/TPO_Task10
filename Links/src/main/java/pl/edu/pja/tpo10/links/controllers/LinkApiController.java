@@ -7,12 +7,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pl.edu.pja.tpo10.links.dtos.LinkRequestDto;
 import pl.edu.pja.tpo10.links.dtos.LinkResponseDto;
 import pl.edu.pja.tpo10.links.exceptions.ImmutableFieldException;
+import pl.edu.pja.tpo10.links.exceptions.LinkWithThisNameAlreadyExistsException;
 import pl.edu.pja.tpo10.links.exceptions.WrongPasswordException;
 import pl.edu.pja.tpo10.links.services.LinkService;
 
+import java.net.URI;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -30,8 +33,20 @@ public class LinkApiController
     @PostMapping("/")
     public ResponseEntity<LinkResponseDto> saveLink(@RequestBody LinkRequestDto linkRequestDto)
     {
-        LinkResponseDto linkResponseDto = linkService.saveLink(linkRequestDto);
-        return ResponseEntity.ok(linkResponseDto);
+        try
+        {
+            LinkResponseDto linkResponseDto  = linkService.saveLink(linkRequestDto);
+            URI savedLinkLocation = ServletUriComponentsBuilder.fromCurrentRequest()
+                    .path("/{id}")
+                    .buildAndExpand(linkResponseDto.getLinkId())
+                    .toUri();
+            return ResponseEntity.created(savedLinkLocation).body(linkResponseDto);
+        } catch (LinkWithThisNameAlreadyExistsException e)
+        {
+            return ResponseEntity.badRequest()
+                    .header("reason", e.getMessage())
+                    .build();
+        }
     }
 
     @GetMapping("/{id}")
@@ -58,11 +73,11 @@ public class LinkApiController
         } catch (JsonPatchException | JsonProcessingException | ImmutableFieldException e)
         {
             return ResponseEntity.internalServerError().build();
-        } catch (WrongPasswordException e) {
+        } catch (WrongPasswordException | LinkWithThisNameAlreadyExistsException e) {
             return ResponseEntity.status(403)
                     .header("reason", e.getMessage())
                     .build();
-        }
+            }
         return ResponseEntity.noContent().build();
     }
 

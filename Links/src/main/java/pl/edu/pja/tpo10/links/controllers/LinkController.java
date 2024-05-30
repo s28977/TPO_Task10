@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 import pl.edu.pja.tpo10.links.dtos.LinkRequestDto;
 import pl.edu.pja.tpo10.links.dtos.LinkResponseDto;
+import pl.edu.pja.tpo10.links.exceptions.LinkWithThisNameAlreadyExistsException;
 import pl.edu.pja.tpo10.links.models.Link;
 import pl.edu.pja.tpo10.links.services.LinkService;
 
@@ -30,7 +31,7 @@ public class LinkController
     }
 
     @PostMapping("/saveLink")
-    public RedirectView saveLink(LinkRequestDto linkRequestDto)
+    public RedirectView saveLink(LinkRequestDto linkRequestDto) throws LinkWithThisNameAlreadyExistsException
     {
         if(linkRequestDto.getPassword().isEmpty())
             linkRequestDto.setPassword(null);
@@ -53,7 +54,7 @@ public class LinkController
             return new RedirectView(linkService.getTargetUrlAndIncrementVisits(id), false, false);
         } catch (NoSuchElementException e)
         {
-            return new RedirectView("/invalidId?id=" + id, true, false);
+            return new RedirectView("/link?id=" + id, true, false);
         }
     }
 
