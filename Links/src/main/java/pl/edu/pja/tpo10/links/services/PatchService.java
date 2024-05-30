@@ -3,12 +3,15 @@ package pl.edu.pja.tpo10.links.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
 import org.springframework.stereotype.Service;
-import pl.edu.pja.tpo10.links.exceptions.IllegalUpdateException;
 import pl.edu.pja.tpo10.links.exceptions.WrongPasswordException;
 import pl.edu.pja.tpo10.links.models.Link;
+
+import java.util.*;
+import java.util.stream.StreamSupport;
 
 @Service
 public class PatchService
@@ -20,30 +23,25 @@ public class PatchService
         this.objectMapper = objectMapper;
     }
 
-    public boolean hasIllegalFields(JsonMergePatch patch) throws JsonPatchException
+    public boolean hasIncorrectFields(JsonMergePatch patch) throws JsonPatchException
     {
-        JsonNode node = patch.apply(objectMapper.valueToTree(new Link()));
-        return node.has("linkId") || node.has("redirectUrl") || node.has("visits");
+        JsonNode patchNode = patch.apply(objectMapper.valueToTree(new Link()));
+        return StreamSupport
+                .stream(Spliterators.spliteratorUnknownSize(patchNode.fieldNames(), Spliterator.ORDERED), false)
+                .allMatch(field -> field.equals("name") || field.equals("targetUrl") );
     }
 
-    public boolean hasPassword(JsonMergePatch patch) throws JsonPatchException
+    public Optional<String> getPassword(JsonMergePatch patch) throws JsonPatchException
     {
-        return patch.apply(objectMapper.valueToTree(new Link())).has("password");
+        JsonNode patchNode = patch.apply(objectMapper.valueToTree(new Link()));
+        if(patchNode.hasNonNull("pass"))
+            return Optional.of(patchNode.get("pass").asText());
+        else
+            return Optional.empty();
     }
 
-
-    public Link applyPatch(Link link, JsonMergePatch patch) throws JsonPatchException, JsonProcessingException, WrongPasswordException, IllegalUpdateException
+    public Link applyPatch(Link link, JsonMergePatch patch) throws JsonPatchException, JsonProcessingException, WrongPasswordException, IllegalArgumentException
     {
-        if (!hasPassword(patch))
-        {
-            throw new WrongPasswordException("wrong password");
-        }
-        if (hasIllegalFields(patch))
-        {
-            throw new IllegalUpdateException();
-        }
-        JsonNode linkNode = objectMapper.valueToTree(link);
-        JsonNode patchNode = patch.apply(linkNode);
-        return objectMapper.treeToValue(patchNode, Link.class);
+        return objectMapper.treeToValue(patch.apply(objectMapper.valueToTree(link)), Link.class);
     }
 }

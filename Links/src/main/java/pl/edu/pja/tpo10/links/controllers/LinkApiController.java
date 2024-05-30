@@ -7,10 +7,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.view.RedirectView;
 import pl.edu.pja.tpo10.links.dtos.LinkRequestDto;
 import pl.edu.pja.tpo10.links.dtos.LinkResponseDto;
-import pl.edu.pja.tpo10.links.exceptions.IllegalUpdateException;
+import pl.edu.pja.tpo10.links.exceptions.ImmutableFieldException;
 import pl.edu.pja.tpo10.links.exceptions.WrongPasswordException;
 import pl.edu.pja.tpo10.links.services.LinkService;
 
@@ -56,11 +55,10 @@ public class LinkApiController
         } catch (NoSuchElementException e)
         {
             return ResponseEntity.notFound().build();
-        } catch (JsonPatchException | JsonProcessingException | IllegalUpdateException e)
+        } catch (JsonPatchException | JsonProcessingException | ImmutableFieldException e)
         {
             return ResponseEntity.internalServerError().build();
-        } catch (WrongPasswordException e)
-        {
+        } catch (WrongPasswordException e) {
             return ResponseEntity.status(403)
                     .header("reason", e.getMessage())
                     .build();
